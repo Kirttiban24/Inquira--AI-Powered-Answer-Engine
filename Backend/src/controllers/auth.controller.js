@@ -153,3 +153,47 @@ export async function verifyEmail(req, res) {
         })
     }
 }
+
+export async function resendVerificationEmail(req, res) {
+    const { email } = req.body;
+
+    const user = await userModel.findOne({ email })
+
+    if(!user) {
+        return res.status(404).json({
+            success: false,
+            message: "User not found"
+        })
+    }
+
+    if(user.verified) {
+        return res.status(400).json({
+            success: false,
+            message: "Email is already verified"
+        })
+    }
+
+    const emailVerificationToken = jwt.sign({
+        email: user.email
+    },process.env.JWT_SECRET,
+    { expiresIn: '30m' })
+
+    await sendEmail({
+        to: user.email,
+        subject: "Verify your Inquira account",
+        html: `
+            <h2>Hello, ${user.username}</h2>
+            <p>You requested a new verification email.</p>
+            <p>Please click the link below to verify your email:</p>
+            <a href="http://localhost:3000/api/auth/verify-email?token=${emailVerificationToken}">Verify Email</a>
+            <p>This link will expire in 30minutes.</p>
+        `
+    })
+
+    return res.status(200).json({
+        success: true,
+        message: "Verification email sent successfully"
+    }
+    )
+}
+
