@@ -30,8 +30,25 @@ export const registerValidation = [
         .isEmail().withMessage('Please provide a valid email'),
 
     body('password')
-        .notEmpty().withMessage('Password is required')
-        .isLength({ min: 6 }).withMessage('Password must be at least 6 characters long'),
+        .notEmpty()
+        .withMessage('Password is required')
+
+        .isLength({ min: 8, max: 12 })
+        .withMessage('Password must be between 8 characters and 12 characters')
+
+        .matches(/[!@#$%^&*(),.?":{}|<>_\-\\[\]/~`+=;'']/)
+        .withMessage('Password must contain at least one special character'),
+
+    body('confirmPassword')
+        .notEmpty()
+        .withMessage('Confirm password is required')
+        .custom((confirmPassword, { req }) => {
+            if (confirmPassword !== req.body.password) {
+                throw new Error('Passwords do not match')
+            }
+
+            return true
+        }),    
 ]
 
 export const loginValidator = [
@@ -43,6 +60,29 @@ export const loginValidator = [
     body("password")
         .notEmpty().withMessage("Password is required"),
     validate    
+]
+
+export const resetPasswordValidation = [
+    body('password')
+        .notEmpty()
+        .withMessage('Password is required')
+
+        .isLength({ min: 8, max: 12 })
+        .withMessage('Password must be between 8 characters and 12 characters')
+
+        .matches(/[!@#$%^&*(),.?":{}|<>_\-\\[\]/~`+=;'']/)
+        .withMessage('Password must contain at least one special character'),
+
+    body('confirmPassword')
+        .notEmpty()
+        .withMessage('Confirm password is required')
+        .custom((confirmPassword, { req }) => {
+            if (confirmPassword !== req.body.password) {
+                throw new Error('Passwords do not match')
+            }
+
+            return true
+        })
 ]
 
 

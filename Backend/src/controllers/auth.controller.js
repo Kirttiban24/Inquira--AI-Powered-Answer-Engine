@@ -1,5 +1,7 @@
 import userModel from '../models/user.model.js'
+import passwordResetModel from '../models/passwordReset.model.js'
 import jwt from 'jsonwebtoken'
+import crypto from 'crypto'
 import { sendEmail } from '../services/mail.service.js'
 
 export async function registerUser(req, res) {
@@ -84,7 +86,12 @@ export async function loginUser(req, res) {
         email: user.email
     }, process.env.JWT_SECRET, { expiresIn: '7d' })
 
-    res.cookie("token", token)
+    res.cookie("token", token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+    })
 
     res.status(200).json({
         message: "Login successful",
@@ -195,5 +202,162 @@ export async function resendVerificationEmail(req, res) {
         message: "Verification email sent successfully"
     }
     )
+}
+
+export async function forgotPassword(req, res) {
+    const { email } = req.body;
+
+    const user = await userModel.findOne({ email });
+
+    // Don't reveal whether this email exists
+    if (!user) {
+        return res.status(200).json({
+            success: true,
+            message:
+                "If an account exists with this email, a password reset link has been sent."
+        });
+    }
+
+    // Generate a secure random token
+    const resetToken = crypto.randomBytes(32).toString("hex");
+
+    // Hash the token before storing it in MongoDB
+    const hashedToken = crypto
+        .createHash("sha256")
+        .update(resetToken)
+        .digest("hex");
+
+    // Token expires after 15 minutes
+    const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
+
+    // Remove previous reset requests for this user
+    await passwordResetModel.deleteMany({
+        user: user._id
+    });
+
+    // Store the HASHED token
+    await passwordResetModel.create({
+        user: user._id,
+        token: hashedToken,
+        expiresAt
+    });
+
+    // Raw token goes into the email
+    const resetLink =
+        `http://localhost:3000/api/auth/reset-password?token=${resetToken}`;
+
+    await sendEmail({
+        to: user.email,
+        subject: "Reset your Inquira password",
+        html: `
+            <h2>Hello ${user.username}</h2>
+
+            <p>
+                We received a request to reset your Inquira password.
+            </p>
+
+            <p>
+                Click the link below to create a new password:
+            </p>
+
+            <a href="${resetLink}">
+                Reset Password
+            </a>
+
+            <p>
+                This link will expire in 15 minutes.
+            </p>
+
+            <p>
+                If you did not request a password reset,
+                you can safely ignore this email.
+            </p>
+        `
+    });
+
+    return res.status(200).json({
+        success: true,
+        message:
+            "If an account exists with this email, a password reset link has been sent."
+    });
+}
+
+export async function resetPassword(req, res) {
+    const { token, password } = req.body;
+
+    if (!token || !password) {
+        return res.status(400).json({
+            success: false,
+            message: "Token and new password are required"
+        });
+    }
+
+    // Hash the token received from the user
+    const hashedToken = crypto
+        .createHash("sha256")
+        .update(token)
+        .digest("hex");
+
+    // Find the reset record
+    const resetRequest = await passwordResetModel.findOne({
+        token: hashedToken
+    });
+
+    if (!resetRequest) {
+        return res.status(400).json({
+            success: false,
+            message: "Invalid or expired reset token"
+        });
+    }
+
+    // Check token expiration
+    if (resetRequest.expiresAt < new Date()) {
+        await passwordResetModel.deleteOne({
+            _id: resetRequest._id
+        });
+
+        return res.status(400).json({
+            success: false,
+            message: "Reset token has expired"
+        });
+    }
+
+    // Find the user
+    const user = await userModel.findById(resetRequest.user);
+
+    if (!user) {
+        return res.status(404).json({
+            success: false,
+            message: "User not found"
+        });
+    }
+
+    // Update password
+    user.password = password;
+
+    await user.save();
+
+    // Delete reset token after successful password change
+    await passwordResetModel.deleteOne({
+        _id: resetRequest._id
+    });
+
+    return res.status(200).json({
+        success: true,
+        message: "Password reset successfully. Please login with your new password."
+    });
+}
+
+export async function logoutUser(req, res) {
+    res.clearCookie("token", {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax"
+    });
+
+    return res.status(200).json({
+        success: true,
+        message: "Logout successful"
+    });
 }
 
