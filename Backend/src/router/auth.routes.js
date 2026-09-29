@@ -1,5 +1,5 @@
 import { Router } from 'express'
-import { getMeUser, loginUser, registerUser, verifyEmail, resendVerificationEmail, forgotPassword, resetPassword, logoutUser } from '../controllers/auth.controller.js'
+import { getMeUser, loginUser, registerUser, verifyEmail, resendVerificationEmail, forgotPassword, resetPassword, verifyResetToken, logoutUser } from '../controllers/auth.controller.js'
 import { registerValidation, loginValidator,resetPasswordValidation, validate } from '../validators/auth.validator.js'
 import { authUser } from '../middleware/auth.middleware.js'
 
@@ -16,6 +16,8 @@ authRouter.get('/verify-email', verifyEmail)
 authRouter.post('/resend-verification-email', resendVerificationEmail)
 
 authRouter.post('/forgot-password', forgotPassword)
+
+authRouter.get("/reset-password", verifyResetToken);
 
 authRouter.post('/reset-password',resetPasswordValidation, validate, resetPassword)
 

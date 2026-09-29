@@ -1,5 +1,6 @@
 import userModel from '../models/user.model.js'
 import passwordResetModel from '../models/passwordReset.model.js'
+import resetSessionModel from "../models/resetSession.model.js"
 import jwt from 'jsonwebtoken'
 import crypto from 'crypto'
 import { sendEmail } from '../services/mail.service.js'
@@ -283,69 +284,174 @@ export async function forgotPassword(req, res) {
 }
 
 export async function resetPassword(req, res) {
-    const { token, password } = req.body;
+    const { password } = req.body;
 
-    if (!token || !password) {
+    if (!password) {
         return res.status(400).json({
             success: false,
-            message: "Token and new password are required"
+            message: "New password is required",
         });
     }
 
-    // Hash the token received from the user
-    const hashedToken = crypto
+    const sessionToken = req.cookies.resetSession;
+
+    if (!sessionToken) {
+        return res.status(401).json({
+            success: false,
+            message: "Password reset session is missing or expired",
+        });
+    }
+
+    const hashedSessionToken = crypto
         .createHash("sha256")
-        .update(token)
+        .update(sessionToken)
         .digest("hex");
 
-    // Find the reset record
-    const resetRequest = await passwordResetModel.findOne({
-        token: hashedToken
+    const resetSession = await resetSessionModel.findOne({
+        sessionToken: hashedSessionToken,
     });
 
-    if (!resetRequest) {
-        return res.status(400).json({
+    if (!resetSession) {
+        return res.status(401).json({
             success: false,
-            message: "Invalid or expired reset token"
+            message: "Invalid or expired password reset session",
         });
     }
 
-    // Check token expiration
-    if (resetRequest.expiresAt < new Date()) {
-        await passwordResetModel.deleteOne({
-            _id: resetRequest._id
+    if (resetSession.expiresAt < new Date()) {
+        await resetSessionModel.deleteOne({
+            _id: resetSession._id,
         });
 
-        return res.status(400).json({
+        res.clearCookie("resetSession");
+
+        return res.status(401).json({
             success: false,
-            message: "Reset token has expired"
+            message: "Password reset session has expired",
         });
     }
 
-    // Find the user
-    const user = await userModel.findById(resetRequest.user);
+    const user = await userModel.findById(resetSession.user);
 
     if (!user) {
         return res.status(404).json({
             success: false,
-            message: "User not found"
+            message: "User not found",
         });
     }
 
-    // Update password
     user.password = password;
 
     await user.save();
 
-    // Delete reset token after successful password change
-    await passwordResetModel.deleteOne({
-        _id: resetRequest._id
+    // Delete reset session after successful password reset
+    await resetSessionModel.deleteOne({
+        _id: resetSession._id,
     });
+
+    // Remove reset cookie
+    res.clearCookie("resetSession");
 
     return res.status(200).json({
         success: true,
-        message: "Password reset successfully. Please login with your new password."
+        message:
+            "Password reset successfully. Please login with your new password.",
     });
+}
+
+export async function verifyResetToken(req, res) {
+    const { token } = req.query;
+
+    if (!token) {
+        return res.redirect(
+            "http://localhost:5173/forgot-password?error=invalid-reset-link"
+        );
+    }
+
+    try {
+        // Hash the raw token from the email
+        const hashedToken = crypto
+            .createHash("sha256")
+            .update(token)
+            .digest("hex");
+
+        // Find reset token
+        const resetRequest = await passwordResetModel.findOne({
+            token: hashedToken,
+        });
+
+        if (!resetRequest) {
+            return res.redirect(
+                "http://localhost:5173/forgot-password?error=invalid-reset-link"
+            );
+        }
+
+        // Check expiration
+        if (resetRequest.expiresAt < new Date()) {
+            await passwordResetModel.deleteOne({
+                _id: resetRequest._id,
+            });
+
+            return res.redirect(
+                "http://localhost:5173/forgot-password?error=expired-reset-link"
+            );
+        }
+
+        // Generate temporary reset-session token
+        const resetSessionToken = crypto
+            .randomBytes(32)
+            .toString("hex");
+
+        const hashedSessionToken = crypto
+            .createHash("sha256")
+            .update(resetSessionToken)
+            .digest("hex");
+
+        // Reset session expires in 10 minutes
+        const expiresAt = new Date(
+            Date.now() + 10 * 60 * 1000
+        );
+
+        // Remove previous reset sessions for this user
+        await resetSessionModel.deleteMany({
+            user: resetRequest.user,
+        });
+
+        // Create new reset session
+        await resetSessionModel.create({
+            user: resetRequest.user,
+            sessionToken: hashedSessionToken,
+            expiresAt,
+        });
+
+        // Delete the original password reset token
+        await passwordResetModel.deleteOne({
+            _id: resetRequest._id,
+        });
+
+        // Give browser the temporary reset cookie
+        res.cookie("resetSession", resetSessionToken, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production",
+            sameSite: "lax",
+            maxAge: 10 * 60 * 1000,
+        });
+
+        // Redirect to clean frontend URL
+        return res.redirect(
+            "http://localhost:5173/reset-password"
+        );
+
+    } catch (error) {
+        console.error(
+            "Reset token verification failed:",
+            error.message
+        );
+
+        return res.redirect(
+            "http://localhost:5173/forgot-password?error=invalid-reset-link"
+        );
+    }
 }
 
 export async function logoutUser(req, res) {
@@ -360,4 +466,6 @@ export async function logoutUser(req, res) {
         message: "Logout successful"
     });
 }
+
+
 
