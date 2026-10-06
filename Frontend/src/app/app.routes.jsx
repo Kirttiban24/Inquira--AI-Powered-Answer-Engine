@@ -6,6 +6,7 @@ import Dashboard from "../features/chat/pages/Dashboard";
 import Protected from "../features/auth/components/Protected";
 import VerifyEmail from "../features/auth/pages/VerifyEmail";
 import VerifyEmailSuccess from "../features/auth/pages/VerifyEmailSuccess";
+import { Navigate } from "react-router";
 
 const router = createBrowserRouter([
     {
@@ -30,6 +31,10 @@ const router = createBrowserRouter([
             <Dashboard />
         </Protected>
     },
+    {
+        path: "/dashboard",
+        element:<Navigate to="/" replace />
+    }
 ]);
 
 export default router;
