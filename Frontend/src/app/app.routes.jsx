@@ -4,21 +4,31 @@ import Login from "../features/auth/pages/Login";
 import Register from "../features/auth/pages/Register";
 import Dashboard from "../features/chat/pages/Dashboard";
 import Protected from "../features/auth/components/Protected";
+import VerifyEmail from "../features/auth/pages/VerifyEmail";
+import VerifyEmailSuccess from "../features/auth/pages/VerifyEmailSuccess";
 
 const router = createBrowserRouter([
     {
         path: "/login",
-        element: <Login />,
+        element: <Login />
     },
     {
         path: "/register",
-        element: <Register />,
+        element: <Register />
+    },
+    {
+        path: "/verify-email",
+        element: <VerifyEmail />
+    },
+    {
+        path: "/verify-email/success",
+        element: <VerifyEmailSuccess />
     },
     {
         path: "/",
         element: <Protected>
             <Dashboard />
-        </Protected>,
+        </Protected>
     },
 ]);
 

@@ -41,8 +41,6 @@ export function useAuth() {
                 confirmPassword
             })
 
-            dispatch(setUser(data.user))
-
             return data
 
         } catch (error) {
@@ -92,27 +90,19 @@ export function useAuth() {
 
     async function handleGetMe() {
         try {
+            dispatch(setLoading(true));
 
-            dispatch(clearError())
-            dispatch(setLoading(true))
+            const data = await getMe();
 
-            const data = await getMe()
+            dispatch(setUser(data.user));
 
-            dispatch(setUser(data.user))
-
-            return data
+            return data;
 
         } catch (error) {
-
-            dispatch(
-                setError(
-                    error.response?.data?.message ||
-                    'An error occurred while fetching user information.'
-                )
-            )
+            dispatch(setUser(null));
 
         } finally {
-            dispatch(setLoading(false))
+            dispatch(setLoading(false));
         }
     }
 

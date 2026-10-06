@@ -145,6 +145,10 @@ export async function verifyEmail(req, res) {
 
         await user.save();
 
+        return res.redirect(
+            "http://localhost:5173/verify-email/success"
+        );
+
         const html = 
         `
             <h1>Email Verified Successfully</h1>

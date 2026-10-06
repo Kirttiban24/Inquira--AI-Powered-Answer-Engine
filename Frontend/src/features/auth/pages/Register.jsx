@@ -1,5 +1,7 @@
 import { useState } from "react";
-import { Link } from "react-router";
+import { useSelector } from "react-redux";
+import { Link, useNavigate } from "react-router";
+import { useAuth } from "../hook/useAuth";
 
 function Register() {
 
@@ -10,6 +12,14 @@ function Register() {
         confirmPassword: "",
     });
 
+    const [passwordError, setPasswordError] = useState("");
+
+    const { handleRegister } = useAuth();
+    const navigate = useNavigate();
+
+    const error = useSelector((state) => state.auth.error);
+    const loading = useSelector((state) => state.auth.loading);
+
     const handleChange = (e) => {
         const { name, value } = e.target;
 
@@ -17,13 +27,42 @@ function Register() {
             ...formData,
             [name]: value,
         });
-    };
 
-    const handleSubmitForm = (e) => {
+        if (name === "password" || name === "confirmPassword") {
+            const password =
+                name === "password" ? value : formData.password;
+
+            const confirmPassword =
+                name === "confirmPassword" ? value : formData.confirmPassword;
+
+            if (confirmPassword && password !== confirmPassword) {
+                setPasswordError("Passwords do not match.");
+            } else {
+                setPasswordError("");
+            }
+        }
+    }
+
+    const handleSubmitForm = async (e) => {
         e.preventDefault();
 
-        console.log("Register Form Data:", formData);
-    };
+        if (formData.password !== formData.confirmPassword) {
+            setPasswordError("Passwords do not match.");
+            return;
+        }
+
+        setPasswordError("");
+
+        const data = await handleRegister(formData);
+
+        if (data?.success) {
+            navigate("/verify-email", {
+                state: {
+                    email: formData.email
+                }
+            });
+        }
+    }
 
     return (
         <div className="min-h-screen bg-slate-950 flex items-center justify-center px-4 relative overflow-hidden">
@@ -57,6 +96,11 @@ function Register() {
 
                     </div>
 
+                    {error && (
+                        <div className="mb-5 p-3 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-sm">
+                            {error}
+                        </div>
+                    )}
 
                     <form onSubmit={handleSubmitForm} className="space-y-5">
 
@@ -97,7 +141,7 @@ function Register() {
                                 name="email"
                                 value={formData.email}
                                 onChange={handleChange}
-                                placeholder="you@example.com"
+                                placeholder="Enter your email"
                                 className="w-full px-4 py-3 rounded-xl bg-slate-800/70 border border-slate-700 text-white placeholder-slate-500 outline-none transition focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/20"
                                 required
                             />
@@ -145,15 +189,38 @@ function Register() {
                                 className="w-full px-4 py-3 rounded-xl bg-slate-800/70 border border-slate-700 text-white placeholder-slate-500 outline-none transition focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/20"
                                 required
                             />
+
+                            {passwordError && (
+                                <p className="mt-2 text-sm text-red-400">
+                                    {passwordError}
+                                </p>
+                            )}
+                            
                         </div>
 
 
                         {/* Submit */}
                         <button
                             type="submit"
-                            className="w-full py-3 rounded-xl font-semibold text-white bg-gradient-to-r from-cyan-500 to-violet-600 hover:from-cyan-400 hover:to-violet-500 transition-all duration-300 shadow-lg shadow-cyan-500/20 hover:shadow-cyan-500/30"
+                            disabled={loading}
+                            className="
+                                w-full py-3 rounded-xl
+                                font-semibold text-white
+                                bg-gradient-to-r from-cyan-500 to-violet-600
+                                hover:from-cyan-400 hover:to-violet-500
+                                hover:-translate-y-0.5
+                                active:translate-y-0.5
+                                active:scale-[0.98]
+                                active:shadow-none
+                                transition-all duration-150 ease-out
+                                shadow-lg shadow-cyan-500/20
+                                hover:shadow-cyan-500/30
+                                cursor-pointer
+                                disabled:opacity-50
+                                disabled:cursor-not-allowed
+                            "
                         >
-                            Create Account
+                            {loading ? "Creating Account..." : "Create Account"}
                         </button>
 
                     </form>
