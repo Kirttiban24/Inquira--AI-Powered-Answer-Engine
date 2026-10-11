@@ -1,6 +1,7 @@
 import express from 'express'
 import cookieParser from 'cookie-parser'
 import authRouter from './router/auth.routes.js'
+import chatRouter from './router/chat.routes.js'
 import morgan from 'morgan'
 import cors from 'cors'
 
@@ -25,5 +26,5 @@ app.get('/', (req, res) => {
 // ── Routes (add here later) ───────────────────────────────────
 
 app.use('/api/auth', authRouter)
-
+app.use('/api/chats', chatRouter)
 export default app

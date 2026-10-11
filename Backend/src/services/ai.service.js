@@ -1,12 +1,40 @@
 import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
+import { ChatGroq } from "@langchain/groq"
+import { HumanMessage, SystemMessage, AIMessage } from "langchain"
 
-const model = new ChatGoogleGenerativeAI({
+const geminiModel = new ChatGoogleGenerativeAI({
   model: "gemini-3.5-flash-lite",
-  apiKey: process.env.INQUIRA_API_KEY
+  apiKey: process.env.GEMINI_API_KEY
 });
 
-export async function testAi() {
-    model.invoke("what is the capital of INDIA?").then((response) => {
-        console.log(response.text); 
-    })
+const groqModel = new ChatGroq({
+    model: "openai/gpt-oss-20b",
+    apiKey: process.env.GROQ_API_KEY
+})
+
+
+export async function generateResponse(messages) {
+    const response = await geminiModel.invoke(messages.map(msg => {
+        if(msg.role=="user") {
+            return new HumanMessage(msg.content)
+        } else if(msg.role=="ai") {
+            return new AIMessage(msg.content)
+        }
+    }))
+
+    return response.text
+}
+
+export async function generateChatTitle(message) {
+    const response = await groqModel.invoke([
+        new SystemMessage(`
+            You are a helpful assistant that generates concise and descriptive titles for chat messages.
+            
+            User will provide you with a chat message and you will generate a title for the chat message. The title should be concise, descriptive, and relevant to the content of the message. The title should be in sentence case and should between 2-5 words. Do not include any special characters or punctuation in the title.
+        `),
+        new HumanMessage(`
+            Generate a title for the following chat message: "${message}"
+        `)
+    ])
+    return response.text
 }
