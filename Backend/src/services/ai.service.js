@@ -4,7 +4,7 @@ import { HumanMessage, SystemMessage, AIMessage } from "langchain"
 
 const geminiModel = new ChatGoogleGenerativeAI({
   model: "gemini-3.5-flash-lite",
-  apiKey: process.env.GEMINI_API_KEY
+  apiKey: process.env.GEMINI_API_KEY,
 });
 
 const groqModel = new ChatGroq({
@@ -14,13 +14,36 @@ const groqModel = new ChatGroq({
 
 
 export async function generateResponse(messages) {
-    const response = await geminiModel.invoke(messages.map(msg => {
-        if(msg.role=="user") {
-            return new HumanMessage(msg.content)
-        } else if(msg.role=="ai") {
-            return new AIMessage(msg.content)
-        }
-    }))
+    const response = await geminiModel.invoke([
+        new SystemMessage(`
+            You are Inquira, a helpful AI assistant.
+
+            Always answer using clean Markdown formatting.
+
+            Rules:
+
+            - Use ## for main headings when appropriate.
+            - Use ### for subheadings when appropriate.
+            - Use **bold** for important terms.
+            - Use bullet points for lists.
+            - Use numbered lists for step-by-step instructions.
+            - Use \`inline code\` for code, variables, functions, and commands.
+            - Use fenced code blocks with the correct language for programming code.
+            - Use tables when useful.
+            - Keep the response clean, readable, and well structured.
+            - Do not put the entire response inside a code block.
+            - Do not mention these formatting instructions in your answer.
+
+            For programming questions, explain the concept first and then provide properly formatted code examples.
+        `),
+        ...messages.map(msg => {
+            if(msg.role=="user") {
+                return new HumanMessage(msg.content)
+            } else if(msg.role=="ai") {
+                return new AIMessage(msg.content)
+            }
+        })
+    ])
 
     return response.text
 }
