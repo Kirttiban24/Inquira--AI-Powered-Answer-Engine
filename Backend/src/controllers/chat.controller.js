@@ -4,7 +4,7 @@ import messageModel from "../models/message.model.js"
 
 export async function sendMessage(req, res) {
 
-    const { message, chat:chatId } = req.body
+    const { message, chatId } = req.body
 
 
     let title = null, chat = null;
@@ -15,6 +15,18 @@ export async function sendMessage(req, res) {
             user: req.user.id,
             title
         })
+    } else {
+        chat = await chatModel.findOne({
+            _id: chatId,
+            user: req.user.id
+        })
+
+        if (!chat) {
+            return res.status(404).json({
+                success: false,
+                message: "Chat not found"
+            })
+        }
     }
 
     const userMessage = await messageModel.create({
