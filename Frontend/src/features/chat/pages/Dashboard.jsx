@@ -43,6 +43,7 @@ const Dashboard = () => {
       return
     }
 
+
     try {
       await chat.handleSendMessage({
         message: trimmed,

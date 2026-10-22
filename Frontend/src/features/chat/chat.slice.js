@@ -11,16 +11,21 @@ const chatSlice = createSlice({
     },
     reducers: {
         createNewChat: (state, action) => {
-            const { chatId, title } = action.payload;
+            const { chatId, title, createdAt } = action.payload;
             state.chats[chatId] = {
                 _id: chatId,
                 title,
                 messages: [],
+                createdAt,
                 lastUpdated: new Date().toISOString(),
             }
         },
         addNewMessage: (state, action) => {
             const { chatId, content, role } = action.payload
+
+            if (!state.chats[chatId]) {
+                return
+            }
             state.chats[chatId].messages.push({ content, role })
         },
         setChatMessages: (state, action) => {
