@@ -4,6 +4,8 @@ import messageModel from "../models/message.model.js"
 
 export async function sendMessage(req, res) {
 
+    console.time("TOTAL MESSAGE")
+
     const { message, chatId } = req.body
 
 
@@ -45,6 +47,8 @@ export async function sendMessage(req, res) {
         content: result,
         role: "ai"
     })
+
+    console.timeEnd("TOTAL MESSAGE")
 
     res.status(201).json({ 
         title,
