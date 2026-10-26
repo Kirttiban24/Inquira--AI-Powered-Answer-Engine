@@ -6,57 +6,55 @@ import ReactMarkdown from 'react-markdown'
 const Dashboard = () => {
 
   const chat = useChat()
+
   const [input, setInput] = useState('')
+
   const bottomRef = useRef(null)
-  // Get chat data from Redux
+
   const chats = useSelector(state => state.chat.chats)
   const currentChatId = useSelector(state => state.chat.currentChatId)
 
-  // Find the currently selected chat
   const currentChat = Object.values(chats).find(
     chatItem => chatItem._id === currentChatId
   )
 
-  // Get messages from current chat
   const messages = currentChat?.messages || []
 
-  // Initialize Socket.IO
   useEffect(() => {
     chat.initializeSocketConnection()
     chat.handleGetChats()
   }, [])
 
-
-  // Auto-scroll to latest message
   useEffect(() => {
     bottomRef.current?.scrollIntoView({
       behavior: 'smooth'
     })
   }, [messages])
 
-  // Send message
   const handleSend = async () => {
-
     const trimmed = input.trim()
-
-    if (!trimmed) {
-      return
-    }
-
+    if (!trimmed) return
 
     try {
       await chat.handleSendMessage({
         message: trimmed,
         chatId: currentChatId
       })
-      setInput('')
 
+      setInput('')
     } catch (error) {
       console.error("Failed to send message:", error)
     }
   }
 
-  // Handle Enter key
+  const handleSelectChat = async (chatId) => {
+    try {
+      await chat.handleGetMessages(chatId)
+    } catch (error) {
+      console.error("Failed to load chat messages:", error)
+    }
+  }
+
   const handleKeyDown = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault()
@@ -64,13 +62,13 @@ const Dashboard = () => {
     }
   }
 
-  const handleSelectChat = async (chatId) => {
-    try {
-        await chat.handleGetMessages(chatId)
-    } catch (error) {
-        console.error("Failed to load chat messages:", error)
-    }
-}
+  const formatChatDate = (date) => {
+    return new Date(date).toLocaleDateString('en-IN', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric'
+    })
+  }
 
   return (
     <div className="h-screen bg-zinc-950 text-white flex overflow-hidden">
@@ -103,14 +101,15 @@ const Dashboard = () => {
         <div className="px-4 py-4 flex flex-col gap-2 border-b border-white/10">
 
           <button
-            className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-zinc-300 hover:bg-white/5 transition-colors"
+            className="flex items-center gap-2 px-3 py-2 rounded-lg text-base text-zinc-300 hover:bg-white/5 transition-colors"
           >
             🔍 Search
           </button>
 
 
           <button
-            className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-zinc-300 hover:bg-white/5 transition-colors"
+            onClick={chat.handleNewChat}
+            className="flex items-center gap-2 px-3 py-2 rounded-lg text-base text-zinc-300 hover:bg-white/5 transition-colors"
           >
             + New Chat
           </button>
@@ -124,7 +123,7 @@ const Dashboard = () => {
 
           {Object.values(chats).length === 0 ? (
 
-            <p className="text-xs text-zinc-500 px-1">
+            <p className="text-sm text-zinc-500 px-1">
               No chats yet
             </p>
 
@@ -136,16 +135,24 @@ const Dashboard = () => {
 
                 <li key={chatItem._id}>
 
-                <button
-                  onClick={() => handleSelectChat(chatItem._id)}
-                  className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${
+                  <button
+                    onClick={() => handleSelectChat(chatItem._id)}
+                    className={`w-full text-left px-3 py-2 rounded-lg transition-colors ${
                       currentChatId === chatItem._id
-                          ? 'bg-white/10 text-white'
-                          : 'text-zinc-400 hover:bg-white/5 hover:text-white'
-                  }`}
-                >
-                  {chatItem.title}
-                </button>
+                        ? 'bg-white/10 text-white'
+                        : 'text-zinc-400 hover:bg-white/5 hover:text-white'
+                    }`}
+                  >
+
+                    <div className="truncate text-sm font-medium">
+                      {chatItem.title}
+                    </div>
+
+                    <div className="text-xs text-zinc-500 mt-1">
+                      {formatChatDate(chatItem.createdAt)}
+                    </div>
+
+                  </button>
 
                 </li>
 
@@ -163,14 +170,14 @@ const Dashboard = () => {
         <div className="px-4 py-4 border-t border-white/10 space-y-1">
 
           <button
-            className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-zinc-400 hover:bg-white/5 hover:text-white transition-colors w-full"
+            className="flex items-center gap-2 px-3 py-2 rounded-lg text-base text-zinc-400 hover:bg-white/5 hover:text-white transition-colors w-full"
           >
             👤 Profile
           </button>
 
 
           <button
-            className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-zinc-400 hover:bg-white/5 hover:text-white transition-colors w-full"
+            className="flex items-center gap-2 px-3 py-2 rounded-lg text-base text-zinc-400 hover:bg-white/5 hover:text-white transition-colors w-full"
           >
             ⚙ Settings
           </button>
@@ -191,17 +198,15 @@ const Dashboard = () => {
             CHAT HEADER
         ================================================== */}
 
-        <header className="h-14 px-6 flex items-center justify-between border-b border-white/10 shrink-0">
+        <header className="h-16 px-6 flex items-center justify-between border-b border-white/10 shrink-0">
 
-          <h1 className="text-sm font-medium text-zinc-200 truncate">
-
+          <h1 className="text-lg font-semibold text-zinc-100 truncate">
             {currentChat?.title || "New Chat"}
-
           </h1>
 
 
           <button
-            className="text-zinc-500 hover:text-zinc-300 transition-colors text-lg leading-none"
+            className="text-zinc-500 hover:text-zinc-300 transition-colors text-xl leading-none"
           >
             ···
           </button>
@@ -213,7 +218,7 @@ const Dashboard = () => {
             MESSAGES
         ================================================== */}
 
-        <section className="flex-1 overflow-y-auto px-6 py-6 space-y-4">
+        <section className="flex-1 overflow-y-auto px-6 py-6 space-y-5">
 
           {messages.length === 0 ? (
 
@@ -221,17 +226,12 @@ const Dashboard = () => {
 
               <div className="text-center">
 
-                <h2 className="text-xl font-medium text-zinc-300">
-
+                <h2 className="text-2xl font-semibold text-zinc-300">
                   What can I help you with?
-
                 </h2>
 
-
-                <p className="text-sm text-zinc-500 mt-2">
-
+                <p className="text-base text-zinc-500 mt-2">
                   Ask anything to get started.
-
                 </p>
 
               </div>
@@ -253,8 +253,8 @@ const Dashboard = () => {
                   className="flex justify-end"
                 >
 
-                  <div className="max-w-xs bg-violet-600/80 text-white text-sm px-4 py-2.5 rounded-2xl rounded-tr-sm shadow">
-                    
+                  <div className="max-w-lg bg-violet-600/80 text-white text-base font-medium px-5 py-3 rounded-2xl rounded-tr-sm shadow">
+
                     {msg.content}
 
                   </div>
@@ -272,47 +272,51 @@ const Dashboard = () => {
                   className="flex justify-start"
                 >
 
-                 <div className="max-w-2xl bg-zinc-800 text-zinc-100 text-sm px-5 py-3.5 rounded-2xl rounded-tl-sm shadow leading-relaxed">
+                  <div className="w-full bg-zinc-800 text-zinc-100 text-base px-6 py-4 rounded-2xl rounded-tl-sm shadow leading-7">
+
                     <ReactMarkdown
                       components={{
+
                         h1: ({ children }) => (
-                          <h1 className="text-xl font-bold mt-4 mb-3">
+                          <h1 className="text-2xl font-bold mt-5 mb-3">
                             {children}
                           </h1>
                         ),
 
                         h2: ({ children }) => (
-                          <h2 className="text-lg font-semibold mt-4 mb-2">
+                          <h2 className="text-xl font-semibold mt-5 mb-3">
                             {children}
                           </h2>
                         ),
 
                         h3: ({ children }) => (
-                          <h3 className="text-base font-semibold mt-3 mb-2">
+                          <h3 className="text-lg font-semibold mt-4 mb-2">
                             {children}
                           </h3>
                         ),
 
                         p: ({ children }) => (
-                          <p className="mb-3 last:mb-0">
+                          <p className="mb-4 last:mb-0">
                             {children}
                           </p>
                         ),
 
                         ul: ({ children }) => (
-                          <ul className="list-disc ml-5 mb-3 space-y-1">
+                          <ul className="list-disc ml-6 mb-4 space-y-2">
                             {children}
                           </ul>
                         ),
 
                         ol: ({ children }) => (
-                          <ol className="list-decimal ml-5 mb-3 space-y-1">
+                          <ol className="list-decimal ml-6 mb-4 space-y-2">
                             {children}
                           </ol>
                         ),
 
                         li: ({ children }) => (
-                          <li>{children}</li>
+                          <li>
+                            {children}
+                          </li>
                         ),
 
                         strong: ({ children }) => (
@@ -322,23 +326,28 @@ const Dashboard = () => {
                         ),
 
                         em: ({ children }) => (
-                          <em>{children}</em>
+                          <em>
+                            {children}
+                          </em>
                         ),
 
                         code: ({ children }) => (
-                          <code className="bg-zinc-700 px-1.5 py-0.5 rounded text-violet-300 text-xs">
+                          <code className="bg-zinc-700 px-1.5 py-0.5 rounded text-violet-300 text-sm">
                             {children}
                           </code>
                         ),
 
                         blockquote: ({ children }) => (
-                          <blockquote className="border-l-2 border-violet-500 pl-4 my-3 text-zinc-400">
+                          <blockquote className="border-l-2 border-violet-500 pl-4 my-4 text-zinc-400">
                             {children}
                           </blockquote>
                         ),
+
                       }}
                     >
+
                       {msg.content}
+
                     </ReactMarkdown>
 
                   </div>
@@ -373,18 +382,17 @@ const Dashboard = () => {
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder="Ask anything..."
-              className="flex-1 bg-transparent text-sm text-zinc-200 placeholder-zinc-500 resize-none outline-none leading-5"
+              className="flex-1 bg-transparent text-base text-zinc-200 placeholder-zinc-500 resize-none outline-none leading-6"
             />
-
 
             <button
               onClick={handleSend}
               disabled={!input.trim()}
-              className="shrink-0 p-1.5 rounded-lg bg-violet-600 hover:bg-violet-500 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+              className="shrink-0 p-2 rounded-lg bg-violet-600 hover:bg-violet-500 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
             >
 
               <svg
-                className="w-4 h-4 text-white"
+                className="w-5 h-5 text-white"
                 fill="none"
                 stroke="currentColor"
                 strokeWidth={2.5}
@@ -405,9 +413,7 @@ const Dashboard = () => {
 
 
           <p className="text-xs text-zinc-600 text-center mt-2">
-
             Press Enter to send · Shift+Enter for new line
-
           </p>
 
         </footer>
@@ -418,4 +424,4 @@ const Dashboard = () => {
   )
 }
 
-export default Dashboard
+export default Dashboard 

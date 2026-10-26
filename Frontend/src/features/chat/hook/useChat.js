@@ -69,22 +69,30 @@ export const useChat = () => {
     async function handleGetMessages(chatId) {
         dispatch(setLoading(true))
 
-        const data = await getMessages(chatId)
+        try{
+            const data = await getMessages(chatId)
 
-        dispatch(setChatMessages({
-            chatId,
-            messages: data.messages
-        }))
+            dispatch(setChatMessages({
+                chatId,
+                messages: data.messages
+            }))
 
-        dispatch(setCurrentChatId(chatId))
+            dispatch(setCurrentChatId(chatId))
+            
+        } finally {
+            dispatch(setLoading(false))
+        }
+    }
 
-        dispatch(setLoading(false))
+    async function handleNewChat() {
+        dispatch(setCurrentChatId(null))
     }
 
     return {
         initializeSocketConnection,
         handleSendMessage,
         handleGetChats,
-        handleGetMessages
+        handleGetMessages,
+        handleNewChat
     }
 }
