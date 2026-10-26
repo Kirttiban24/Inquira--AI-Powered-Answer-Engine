@@ -1,1 +1,42 @@
 @import "tailwindcss";
+@layer utilities {
+
+  /* ==============================
+     ChatGPT Style Scrollbar
+     ============================== */
+
+  .scrollbar-chatgpt {
+    /* Firefox */
+    scrollbar-width: thin;
+    scrollbar-color: #4a4a4f transparent;
+  }
+
+  /* Chrome / Edge / Safari */
+  .scrollbar-chatgpt::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  .scrollbar-chatgpt::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .scrollbar-chatgpt::-webkit-scrollbar-track-piece {
+    background: transparent;
+  }
+
+  .scrollbar-chatgpt::-webkit-scrollbar-thumb {
+    background-color: #4a4a4f;
+    border-radius: 9999px;
+    border: 1px solid transparent;
+    background-clip: padding-box;
+  }
+
+  .scrollbar-chatgpt::-webkit-scrollbar-thumb:hover {
+    background-color: #66666d;
+  }
+
+  .scrollbar-chatgpt::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+}

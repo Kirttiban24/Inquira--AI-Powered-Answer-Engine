@@ -119,7 +119,7 @@ const Dashboard = () => {
 
         {/* Chat List */}
 
-        <nav className="flex-1 overflow-y-auto px-4 py-4">
+        <nav className="flex-1 overflow-y-auto px-4 py-4 scrollbar-chatgpt">
 
           {Object.values(chats).length === 0 ? (
 
@@ -218,7 +218,7 @@ const Dashboard = () => {
             MESSAGES
         ================================================== */}
 
-        <section className="flex-1 overflow-y-auto px-6 py-6 space-y-5">
+        <section className="flex-1 overflow-y-auto px-6 py-6 space-y-5 scrollbar-chatgpt">
 
           {messages.length === 0 ? (
 
@@ -276,76 +276,107 @@ const Dashboard = () => {
 
                     <ReactMarkdown
                       components={{
+                          h1: ({ children }) => (
+                              <h1 className="text-2xl font-bold mt-5 mb-3">
+                                  {children}
+                              </h1>
+                          ),
 
-                        h1: ({ children }) => (
-                          <h1 className="text-2xl font-bold mt-5 mb-3">
-                            {children}
-                          </h1>
-                        ),
+                          h2: ({ children }) => (
+                              <h2 className="text-xl font-semibold mt-5 mb-3">
+                                  {children}
+                              </h2>
+                          ),
 
-                        h2: ({ children }) => (
-                          <h2 className="text-xl font-semibold mt-5 mb-3">
-                            {children}
-                          </h2>
-                        ),
+                          h3: ({ children }) => (
+                              <h3 className="text-lg font-semibold mt-4 mb-2">
+                                  {children}
+                              </h3>
+                          ),
 
-                        h3: ({ children }) => (
-                          <h3 className="text-lg font-semibold mt-4 mb-2">
-                            {children}
-                          </h3>
-                        ),
+                          p: ({ children }) => (
+                              <p className="mb-4">
+                                  {children}
+                              </p>
+                          ),
 
-                        p: ({ children }) => (
-                          <p className="mb-4 last:mb-0">
-                            {children}
-                          </p>
-                        ),
+                          ul: ({ children }) => (
+                              <ul className="list-disc ml-6 mb-4 space-y-2">
+                                  {children}
+                              </ul>
+                          ),
 
-                        ul: ({ children }) => (
-                          <ul className="list-disc ml-6 mb-4 space-y-2">
-                            {children}
-                          </ul>
-                        ),
+                          ol: ({ children }) => (
+                              <ol className="list-decimal ml-6 mb-4 space-y-2">
+                                  {children}
+                              </ol>
+                          ),
 
-                        ol: ({ children }) => (
-                          <ol className="list-decimal ml-6 mb-4 space-y-2">
-                            {children}
-                          </ol>
-                        ),
+                          li: ({ children }) => (
+                              <li>
+                                  {children}
+                              </li>
+                          ),
 
-                        li: ({ children }) => (
-                          <li>
-                            {children}
-                          </li>
-                        ),
+                          strong: ({ children }) => (
+                              <strong className="font-semibold text-white">
+                                  {children}
+                              </strong>
+                          ),
 
-                        strong: ({ children }) => (
-                          <strong className="font-semibold text-white">
-                            {children}
-                          </strong>
-                        ),
+                          em: ({ children }) => (
+                              <em>
+                                  {children}
+                              </em>
+                          ),
 
-                        em: ({ children }) => (
-                          <em>
-                            {children}
-                          </em>
-                        ),
+                          // Inline code
+                          code: ({ children, className, ...props }) => {
+                              const isBlock = className?.includes("language-");
 
-                        code: ({ children }) => (
-                          <code className="bg-zinc-700 px-1.5 py-0.5 rounded text-violet-300 text-sm">
-                            {children}
-                          </code>
-                        ),
+                              return isBlock ? (
+                                  <code
+                                      className="block text-sm text-zinc-200"
+                                      {...props}
+                                  >
+                                      {children}
+                                  </code>
+                              ) : (
+                                  <code
+                                      className="bg-zinc-700 px-1.5 py-0.5 rounded text-violet-300 text-sm"
+                                      {...props}
+                                  >
+                                      {children}
+                                  </code>
+                              );
+                          },
 
-                        blockquote: ({ children }) => (
-                          <blockquote className="border-l-2 border-violet-500 pl-4 my-4 text-zinc-400">
-                            {children}
-                          </blockquote>
-                        ),
+                          // Multiline code container
+                          pre: ({ children }) => (
+                              <pre className="my-4 w-full overflow-x-auto bg-zinc-900 border border-white/10 rounded-xl p-4 text-sm leading-6">
+                                  {children}
+                              </pre>
+                          ),
 
+                          blockquote: ({ children }) => (
+                              <blockquote className="border-l-2 border-violet-500 pl-4 my-4 text-zinc-400">
+                                  {children}
+                              </blockquote>
+                          ),
+
+                          // Links
+                          a: ({ children, href }) => (
+                              <a
+                                  href={href}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-violet-400 hover:text-violet-300 underline cursor-pointer"
+                              >
+                                  {children}
+                              </a>
+                          ),
                       }}
                     >
-
                       {msg.content}
 
                     </ReactMarkdown>
