@@ -272,7 +272,7 @@ const Dashboard = () => {
                   className="flex justify-start"
                 >
 
-                  <div className="w-full bg-zinc-800 text-zinc-100 text-base px-6 py-4 rounded-2xl rounded-tl-sm shadow leading-7">
+                  <div className="w-full text-zinc-100 text-base px-2 py-4 leading-7">
 
                     <ReactMarkdown
                       components={{
