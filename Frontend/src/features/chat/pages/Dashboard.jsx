@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react'
 import { useSelector } from 'react-redux'
 import { useChat } from '../hook/useChat'
 import ReactMarkdown from 'react-markdown'
+import remarkGfm from "remark-gfm";
 
 const Dashboard = () => {
 
@@ -275,6 +276,7 @@ const Dashboard = () => {
                   <div className="w-full text-zinc-100 text-base px-2 py-4 leading-7">
 
                     <ReactMarkdown
+                      remarkPlugins={[remarkGfm]}
                       components={{
                           h1: ({ children }) => (
                               <h1 className="text-2xl font-bold mt-5 mb-3">
@@ -364,6 +366,45 @@ const Dashboard = () => {
                               </blockquote>
                           ),
 
+                          // Tables
+                          table: ({ children }) => (
+                              <div className="w-full overflow-x-auto my-5">
+                                  <table className="w-full border-collapse text-sm">
+                                      {children}
+                                  </table>
+                              </div>
+                          ),
+
+                          thead: ({ children }) => (
+                              <thead className="border-b border-white/20">
+                                  {children}
+                              </thead>
+                          ),
+
+                          tbody: ({ children }) => (
+                              <tbody className="divide-y divide-white/10">
+                                  {children}
+                              </tbody>
+                          ),
+
+                          tr: ({ children }) => (
+                              <tr className="hover:bg-white/5 transition-colors">
+                                  {children}
+                              </tr>
+                          ),
+
+                          th: ({ children }) => (
+                              <th className="text-left px-4 py-3 font-semibold text-zinc-200 whitespace-nowrap">
+                                  {children}
+                              </th>
+                          ),
+
+                          td: ({ children }) => (
+                              <td className="px-4 py-3 text-zinc-300">
+                                  {children}
+                              </td>
+                          ),
+
                           // Links
                           a: ({ children, href }) => (
                               <a
@@ -375,8 +416,8 @@ const Dashboard = () => {
                                   {children}
                               </a>
                           ),
-                      }}
-                    >
+                        }}
+                      >
                       {msg.content}
 
                     </ReactMarkdown>
