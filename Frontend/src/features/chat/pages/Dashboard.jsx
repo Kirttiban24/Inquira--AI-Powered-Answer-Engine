@@ -9,6 +9,7 @@ const Dashboard = () => {
   const chat = useChat()
 
   const [input, setInput] = useState('')
+  const [openMenuChatId, setOpenMenuChatId] = useState(null)
 
   const bottomRef = useRef(null)
 
@@ -32,6 +33,18 @@ const Dashboard = () => {
     })
   }, [messages])
 
+  useEffect(() => {
+    const handleClickOutside = () => {
+      setOpenMenuChatId(null)
+    }
+
+    document.addEventListener('click', handleClickOutside)
+
+    return () => {
+      document.removeEventListener('click', handleClickOutside)
+    }
+  }, [])
+
   const handleSend = async () => {
     const trimmed = input.trim()
     if (!trimmed) return
@@ -53,6 +66,15 @@ const Dashboard = () => {
       await chat.handleGetMessages(chatId)
     } catch (error) {
       console.error("Failed to load chat messages:", error)
+    }
+  }
+
+  const handleDeleteChat = async (chatId) => {
+    try {
+      await chat.handleDeleteChat(chatId)
+      setOpenMenuChatId(null)
+    } catch (error) {
+      console.error("Failed to delete chat:", error)
     }
   }
 
@@ -102,7 +124,7 @@ const Dashboard = () => {
         <div className="px-4 py-4 flex flex-col gap-2 border-b border-white/10">
 
           <button
-            className="flex items-center gap-2 px-3 py-2 rounded-lg text-base text-zinc-300 hover:bg-white/5 transition-colors"
+            className="flex items-center gap-2 px-3 py-2 rounded-lg text-base text-zinc-300 hover:bg-white/5 cursor-pointer transition-colors"
           >
             🔍 Search
           </button>
@@ -110,7 +132,7 @@ const Dashboard = () => {
 
           <button
             onClick={chat.handleNewChat}
-            className="flex items-center gap-2 px-3 py-2 rounded-lg text-base text-zinc-300 hover:bg-white/5 transition-colors"
+            className="flex items-center gap-2 px-3 py-2 rounded-lg text-base text-zinc-300 hover:bg-white/5 cursor-pointer transition-colors"
           >
             + New Chat
           </button>
@@ -134,11 +156,15 @@ const Dashboard = () => {
 
               {Object.values(chats).map(chatItem => (
 
-                <li key={chatItem._id}>
+                <li
+                  key={chatItem._id}
+                  className="relative group"
+                >
 
+                  {/* Chat button */}
                   <button
                     onClick={() => handleSelectChat(chatItem._id)}
-                    className={`w-full text-left px-3 py-2 rounded-lg transition-colors ${
+                    className={`w-full text-left px-3 py-2 pr-10 rounded-lg cursor-pointer transition-colors ${
                       currentChatId === chatItem._id
                         ? 'bg-white/10 text-white'
                         : 'text-zinc-400 hover:bg-white/5 hover:text-white'
@@ -155,10 +181,56 @@ const Dashboard = () => {
 
                   </button>
 
+
+                  {/* Three dot button */}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+
+                      setOpenMenuChatId(
+                        openMenuChatId === chatItem._id
+                          ? null
+                          : chatItem._id
+                      )
+                    }}
+                    className="absolute right-2 top-1/2 -translate-y-1/2
+                              opacity-0 group-hover:opacity-100
+                              text-zinc-400 hover:text-white
+                              px-1 cursor-pointer transition-opacity"
+                  >
+                    ⋯
+                  </button>
+
+
+                  {/* Three dot menu */}
+                  {openMenuChatId === chatItem._id && (
+                    <div
+                      className="absolute right-2 top-10 z-50
+                                w-32 bg-zinc-800
+                                border border-white/10
+                                rounded-lg shadow-xl
+                                cursor-pointer py-1"
+                    >
+
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleDeleteChat(chatItem._id)
+                        }}
+                        className="w-full text-left px-3 py-2
+                                  text-sm text-red-400
+                                  hover:bg-white/5
+                                  transition-colors"
+                      >
+                        Delete chat
+                      </button>
+
+                    </div>
+                  )}
+
                 </li>
 
               ))}
-
             </ul>
 
           )}
@@ -171,7 +243,7 @@ const Dashboard = () => {
         <div className="px-4 py-4 border-t border-white/10 space-y-1">
 
           <button
-            className="flex items-center gap-2 px-3 py-2 rounded-lg text-base text-zinc-400 hover:bg-white/5 hover:text-white transition-colors w-full"
+            className="flex items-center gap-2 px-3 py-2 rounded-lg text-base text-zinc-400 hover:bg-white/5 hover:text-white cursor-pointer transition-colors w-full"
           >
             👤 Profile
           </button>
